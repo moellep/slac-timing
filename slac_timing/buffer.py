@@ -231,14 +231,8 @@ class Buffer(BaseModel, ABC):
         return True
 
     def _fetch_single(self, epics, pv: str) -> Optional[np.ndarray]:
-        # epics.caget() silently creates a persistent CA monitor on this PV
-        # (pyepics' auto_monitor default) that is never released -- a real
-        # leak against the HST<n> buffer-number pool, since this is read
-        # repeatedly against a rotating set of names. A plain
-        # epics.PV(pvname, auto_monitor=False) read, explicitly
-        # disconnect()ed right after, avoids creating the monitor in the
-        # first place. See claude/production-monitor-fix-recommendation.md
-        # in slac-wire for the empirical comparison this fix is based on.
+        # Avoids calling epics.caget() which silently creates a persistent CA monitor on this PV.
+        # Disconnects the pv immediately after use which removes pyepic's _PVcache_ value.
         ca_pv = epics.PV(self.buffer_pv(pv), auto_monitor=False)
         data = ca_pv.get(use_monitor=False, timeout=5.0)
         ca_pv.disconnect()

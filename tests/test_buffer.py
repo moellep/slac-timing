@@ -51,11 +51,7 @@ def buffer():
 def _mock_pv(*, return_value=None, side_effect=None):
     """Patch epics.PV so _fetch_single()'s epics.PV(...).get(...) can be
     scripted the way these tests used to script epics.caget() directly,
-    before the auto_monitor=False fix (see slac-wire's
-    claude/production-monitor-fix-recommendation.md: epics.caget()
-    silently left a persistent CA monitor on every HST<n> PV it touched).
-    Yields the mock PV instance so a test can also assert on
-    mock_pv.get.call_count or mock_pv.disconnect.
+    before the auto_monitor=False fix.
     """
     mock_pv = MagicMock()
     if side_effect is not None:
