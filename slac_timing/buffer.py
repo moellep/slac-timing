@@ -233,9 +233,9 @@ class Buffer(BaseModel, ABC):
     def _fetch_single(self, epics, pv: str) -> Optional[np.ndarray]:
         # Avoids calling epics.caget() which silently creates a persistent CA monitor on this PV.
         # Disconnects the pv immediately after use which removes pyepic's _PVcache_ value.
-        ca_pv = epics.PV(self.buffer_pv(pv), auto_monitor=False)
-        data = ca_pv.get(use_monitor=False, timeout=5.0)
-        ca_pv.disconnect()
+        p = epics.PV(self.buffer_pv(pv), auto_monitor=False)
+        data = p.get(use_monitor=False, timeout=5.0)
+        p.disconnect()
         if data is None:
             return None
         if self.n_measurements > 0:
