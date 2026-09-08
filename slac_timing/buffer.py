@@ -234,6 +234,7 @@ class Buffer(BaseModel, ABC):
         # Avoids calling epics.caget() which silently creates a persistent CA monitor on this PV.
         # Disconnects the pv immediately after use which removes pyepic's _PVcache_ value.
         ca_pv = epics.PV(self.buffer_pv(pv), auto_monitor=False)
+        # timeout=5.0 matches epics.caget()'s original default.
         data = ca_pv.get(use_monitor=False, timeout=5.0)
         ca_pv.disconnect()
         if data is None:
