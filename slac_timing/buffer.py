@@ -232,16 +232,29 @@ class Buffer(BaseModel, ABC):
 
     def _fetch_single(self, epics, pv: str) -> Optional[np.ndarray]:
         # Avoids calling epics.caget() which silently creates a persistent CA monitor on this PV.
-        # Disconnects the pv immediately after use which removes pyepic's _PVcache_ value.
         p = epics.PV(self.buffer_pv(pv), auto_monitor=False)
         # timeout=5.0 matches epics.caget()'s original default.
         data = p.get(use_monitor=False, timeout=5.0)
-        p.disconnect()
+        self._clear_pv_state(epics, p)
         if data is None:
             return None
         if self.n_measurements > 0:
             return data[: self.n_measurements]
         return data
+
+    def _clear_pv_state(self, epics, pv) -> None:
+        """Disconnect pv and discard pyepics' cached last-read value for it."""
+        pv.disconnect()
+        ctx = epics.ca.current_context()
+        if ctx is None:
+            return
+        # No public pyepics API for this -- reaches into epics.ca's internals.
+        context_cache = epics.ca._cache.get(ctx)
+        if context_cache is None:
+            return
+        entry = context_cache.get(pv.pvname)
+        if entry is not None:
+            entry.get_results.clear()
 
     def _fetch_many(self, epics, pvs: list[str]) -> dict[str, Optional[np.ndarray]]:
         hst_pvs = [self.buffer_pv(pv) for pv in pvs]

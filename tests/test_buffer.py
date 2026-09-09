@@ -162,6 +162,18 @@ class TestGetPadWithRetries:
         assert np.isnan(result[2])
 
 
+class TestClearPvState:
+    def test_disconnects_and_clears_cached_value(self, buffer):
+        pv = MagicMock(pvname="SOME:PVHST1")
+        entry = MagicMock()
+        mock_epics = MagicMock()
+        mock_epics.ca.current_context.return_value = "ctx"
+        mock_epics.ca._cache.get.return_value = {"SOME:PVHST1": entry}
+        buffer._clear_pv_state(mock_epics, pv)
+        pv.disconnect.assert_called_once()
+        entry.get_results.clear.assert_called_once()
+
+
 class TestGetMany:
     def test_returns_dict(self, buffer):
         raw = [np.arange(5, dtype=float), None]
